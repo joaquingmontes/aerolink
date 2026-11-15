@@ -13,6 +13,33 @@ export interface DisconnectedFrame {
   timestamp: number;
 }
 
+export type EngineType = 'piston' | 'jet' | 'turboprop' | 'turboshaft';
+
+export interface EngineState {
+  running: boolean;
+  fuelFlowKgH: number;
+  /** Piston and turboprop engines */
+  rpm?: number;
+  /** Turbine engines */
+  n1Pct?: number;
+  n2Pct?: number;
+}
+
+export interface AutopilotState {
+  engaged: boolean;
+  /** Selected values, meaningful only while the matching mode is active */
+  altitudeFt: number;
+  headingDeg: number;
+  speedKt: number;
+  verticalSpeedFpm: number;
+}
+
+export interface WindState {
+  speedKt: number;
+  /** Direction the wind blows from, degrees true */
+  directionDeg: number;
+}
+
 /** One sample of the user's aircraft. Units are part of the field name. */
 export interface LiveFrame {
   type: 'telemetry';
@@ -38,6 +65,37 @@ export interface LiveFrame {
   onGround?: boolean;
   gearDown?: boolean;
   flapsPct?: number;
+  parkingBrake?: boolean;
+
+  /** ICAO type designator, e.g. C172 */
+  aircraftIcao?: string;
+  /** Tail number / callsign as set in the simulator */
+  callsign?: string;
+
+  trueAirspeedKt?: number;
+  mach?: number;
+  gForce?: number;
+  /** Height above ground */
+  aglFt?: number;
+
+  fuelTotalKg?: number;
+  engineType?: EngineType;
+  /** One entry per installed engine; omitted when the aircraft has none */
+  engines?: EngineState[];
+
+  /** Squawk code, 4 digits */
+  transponder?: string;
+  com1Mhz?: number;
+  com1StandbyMhz?: number;
+  nav1Mhz?: number;
+
+  autopilot?: AutopilotState;
+
+  /** Ambient conditions at the aircraft */
+  wind?: WindState;
+  oatC?: number;
+  /** Altimeter setting (Kohlsman), hPa */
+  altimeterSettingHpa?: number;
   /** Milliseconds since the Unix epoch, set by the agent when the sample was taken */
   timestamp: number;
 }

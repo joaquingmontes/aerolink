@@ -1,7 +1,10 @@
 'use strict';
 // MSFS 2020 / 2024, Prepar3D and FSX through SimConnect (optional dependency: node-simconnect).
 
+const { CORE_VARS, EXTRA_VARS, defineVars, decodeVars, coreToFields, extrasToFields } = require('./simvars');
+
 const SOURCE = 'simconnect';
+const EXTRAS_FRESH_MS = 4000;
 
 /** @param {{ store: import('../telemetry').TelemetryStore, log: (m: string) => void }} ctx */
 function start({ store, log }) {
@@ -13,8 +16,10 @@ function start({ store, log }) {
     return () => {};
   }
   const { open, Protocol, SimConnectDataType, SimConnectPeriod, SimConnectConstants } = sc;
-  const DEF = 1;
-  const REQ = 1;
+  const CORE_DEF = 1;
+  const CORE_REQ = 1;
+  const EXTRA_DEF = 2;
+  const EXTRA_REQ = 2;
   let connecting = false;
   let stopped = false;
   let timer = null;
@@ -31,62 +36,33 @@ function start({ store, log }) {
         connecting = false;
         log(`Connected to ${recvOpen.applicationName}`);
 
-        const num = (name, units) => handle.addToDataDefinition(DEF, name, units, SimConnectDataType.FLOAT64);
-        num('PLANE LATITUDE', 'degrees');
-        num('PLANE LONGITUDE', 'degrees');
-        num('PLANE ALTITUDE', 'feet');
-        num('INDICATED ALTITUDE', 'feet');
-        num('PLANE HEADING DEGREES TRUE', 'degrees');
-        num('GROUND VELOCITY', 'knots');
-        num('AIRSPEED INDICATED', 'knots');
-        num('VERTICAL SPEED', 'feet per minute');
-        num('PLANE PITCH DEGREES', 'degrees');
-        num('PLANE BANK DEGREES', 'degrees');
-        num('SIM ON GROUND', 'bool');
-        num('GEAR HANDLE POSITION', 'bool');
-        num('FLAPS HANDLE PERCENT', 'percent');
-        handle.addToDataDefinition(DEF, 'TITLE', null, SimConnectDataType.STRING256);
-
+        defineVars(handle, CORE_DEF, CORE_VARS, SimConnectDataType);
         // every ~10 sim frames (~3-6 Hz): smooth enough for a moving map
-        handle.requestDataOnSimObject(REQ, DEF, SimConnectConstants.OBJECT_ID_USER, SimConnectPeriod.SIM_FRAME, 0, 0, 10);
+        handle.requestDataOnSimObject(CORE_REQ, CORE_DEF, SimConnectConstants.OBJECT_ID_USER, SimConnectPeriod.SIM_FRAME, 0, 0, 10);
+
+        // Extras are a separate definition so a variable the simulator does not know cannot break position/attitude
+        defineVars(handle, EXTRA_DEF, EXTRA_VARS, SimConnectDataType);
+        handle.requestDataOnSimObject(EXTRA_REQ, EXTRA_DEF, SimConnectConstants.OBJECT_ID_USER, SimConnectPeriod.SECOND, 0, 0, 0);
 
         const simName = String(recvOpen.applicationName || '').toLowerCase().includes('2024') ? 'MSFS 2024' : 'MSFS';
+        let extras = null;
+        let extrasAt = 0;
 
         handle.on('simObjectData', (d) => {
-          if (d.requestID !== REQ) return;
-          const b = d.data;
-          const lat = b.readFloat64();
-          const lon = b.readFloat64();
-          const altitudeFt = b.readFloat64();
-          const indicatedAltitudeFt = b.readFloat64();
-          const headingDeg = b.readFloat64();
-          const groundSpeedKt = b.readFloat64();
-          const indicatedAirspeedKt = b.readFloat64();
-          const verticalSpeedFpm = b.readFloat64();
-          const pitchDeg = b.readFloat64();
-          const bankDeg = b.readFloat64();
-          const onGround = b.readFloat64() > 0.5;
-          const gearDown = b.readFloat64() > 0.5;
-          const flapsPct = b.readFloat64();
-          const aircraftTitle = b.readString256();
-          store.report(SOURCE, {
-            sim: simName,
-            aircraftTitle,
-            lat,
-            lon,
-            altitudeFt,
-            indicatedAltitudeFt,
-            headingDeg,
-            groundSpeedKt,
-            indicatedAirspeedKt,
-            verticalSpeedFpm,
-            pitchDeg: -pitchDeg, // SimConnect reports nose-down as positive
-            bankDeg: -bankDeg,
-            onGround,
-            gearDown,
-            flapsPct,
-            timestamp: Date.now(),
-          });
+          try {
+            if (d.requestID === EXTRA_REQ) {
+              extras = extrasToFields(decodeVars(d.data, EXTRA_VARS));
+              extrasAt = Date.now();
+              return;
+            }
+            if (d.requestID !== CORE_REQ) return;
+            const now = Date.now();
+            const fields = coreToFields(decodeVars(d.data, CORE_VARS), simName);
+            const fresh = extras && now - extrasAt < EXTRAS_FRESH_MS ? extras : {};
+            store.report(SOURCE, { ...fresh, ...fields, timestamp: now });
+          } catch (err) {
+            log(`Could not decode a SimConnect reply: ${err.message}`);
+          }
         });
 
         const lost = () => {

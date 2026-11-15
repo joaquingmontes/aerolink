@@ -101,7 +101,7 @@ By contributing you agree that your work is released under the [MIT License](LIC
 
 ## Status
 
-Early (v0.1). Read-only, one aircraft. Planned: commands to the simulator (load a flight plan), fuel, engines, radios and autopilot state.
+Early (v0.1). Read-only, one aircraft. MSFS, P3D and FSX report position, attitude, speeds, fuel, engines, radios, autopilot and ambient conditions; X-Plane reports position, attitude and speeds. Planned: the same extra state for X-Plane, and commands to the simulator (load a flight plan).
 
 ## License
 

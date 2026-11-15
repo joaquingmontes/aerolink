@@ -15,4 +15,4 @@ To use another port, start the agent with `--xplane-port <n>` and set the same p
 
 If the aircraft does not appear, check that all four rows are ticked: the agent only publishes once it has received a position (row 20).
 
-X-Plane has no `aircraftTitle`, gear or flap data over Data Output, so those fields are omitted for it.
+Over Data Output X-Plane provides position, attitude and speeds only. Aircraft title, gear, flaps, fuel, engines, radios and autopilot are not available there, so those fields are omitted for X-Plane for now.
