@@ -67,6 +67,38 @@ npm test
 npm run typecheck
 ```
 
+## Contributing
+
+Contributions are welcome: bug reports, new simulator backends, protocol proposals and documentation.
+
+**Reporting a bug.** Open an issue with the simulator and version (for example MSFS 2024 or X-Plane 12.1), your OS, the Node version, the agent's console output, and what you expected versus what you got. For wrong values, include a frame from `http://127.0.0.1:4388/telemetry`.
+
+**Setting up.**
+
+```bash
+git clone https://github.com/joaquingmontes/aerolink.git
+cd aerolink
+npm install
+npm run agent:mock       # runs without a simulator
+npm test
+npm run typecheck
+```
+
+**Sending a pull request.**
+
+1. For anything beyond a small fix, open an issue first so we can agree on the approach.
+2. Keep the change focused and add or update tests in `packages/agent/test` (packet decoding and protocol behaviour are easy to cover without a simulator).
+3. Make sure `npm test` and `npm run typecheck` pass.
+
+**Rules for the code.**
+
+- Never fabricate data. With no simulator delivering samples the agent reports `connected: false` and no position. Synthetic data is only allowed in the opt-in `--mock` source, which identifies itself as `sim: "Mock"`.
+- Protocol changes follow [docs/PROTOCOL.md](docs/PROTOCOL.md#versioning): adding an optional field is fine, renaming or removing a field or changing a unit needs a new major version. Field names carry their unit, and absent values are omitted rather than sent as `null`.
+- The agent stays dependency-free. A simulator SDK may be an optional dependency, loaded lazily so the agent still runs without it.
+- Document any simulator-side setup in `docs/` (see `docs/SETUP-XPLANE.md`).
+
+By contributing you agree that your work is released under the [MIT License](LICENSE).
+
 ## Status
 
 Early (v0.1). Read-only, one aircraft. Planned: commands to the simulator (load a flight plan), fuel, engines, radios and autopilot state.
