@@ -1,0 +1,9 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "declaration": false,
+    "rootDir": "..",
+    "paths": { "@aerolink/protocol": ["../protocol/src/index.ts"] }
+  }
+}

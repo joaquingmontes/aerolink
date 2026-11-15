@@ -1,0 +1,16 @@
+{
+  "name": "@aerolink/client",
+  "version": "0.1.0",
+  "description": "TypeScript client for the AeroLink local simulator bridge.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p ."
+  },
+  "dependencies": {
+    "@aerolink/protocol": "^0.1.0"
+  },
+  "license": "MIT"
+}

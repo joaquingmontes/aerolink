@@ -1,0 +1,19 @@
+{
+  "name": "aerolink-monorepo",
+  "private": true,
+  "version": "0.1.0",
+  "description": "AeroLink: one local bridge and one protocol for flight simulator telemetry (MSFS, P3D, FSX, X-Plane).",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "agent": "node packages/agent/src/cli.js",
+    "agent:mock": "node packages/agent/src/cli.js --mock",
+    "typecheck": "tsc -p packages/protocol --noEmit && tsc -p packages/client/tsconfig.check.json",
+    "test": "node --test packages/agent/test/*.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "license": "MIT"
+}
